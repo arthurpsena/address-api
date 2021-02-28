@@ -1,6 +1,8 @@
 package com.stoom.addressapi.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.stoom.addressapi.exception.CommunicationException;
 import com.stoom.addressapi.exception.NotFoundException;
 import com.stoom.addressapi.exception.handler.AddressExceptionHandler;
 import com.stoom.addressapi.model.Address;
@@ -22,6 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
@@ -139,5 +142,14 @@ class AddressControllerTest {
                 delete("/addresses/1")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print()).andExpect(status().isNoContent());
+    }
+
+    @Test
+    void deveLancarStatusCode_500() throws Exception {
+        when(service.save(any())).thenThrow(CommunicationException.class);
+        mockMvc.perform(
+                post("/addresses").content(mapper.writeValueAsBytes(request))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print()).andExpect(status().isInternalServerError());
     }
 }

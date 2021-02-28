@@ -1,5 +1,6 @@
 package com.stoom.addressapi.service;
 
+import com.stoom.addressapi.exception.CommunicationException;
 import com.stoom.addressapi.model.dto.filter.AddressFilter;
 import com.stoom.addressapi.model.dto.request.AddressRequest;
 import com.stoom.addressapi.model.Address;
@@ -130,10 +131,40 @@ class AddressServiceTest {
     }
 
     @Test
+    void deveFalharAoTentarInserirUmRegistroNovo() {
+        doThrow(CommunicationException.class).when(googleMapsService).setCoordinates(any());
+        assertThrows(CommunicationException.class, () -> service.save(request));
+        verify(repository,never()).saveAndFlush(any(Address.class));
+    }
+
+    @Test
     void deveAtualizarUmEnderecoExistente() {
         when(repository.findById(anyLong()))
                 .thenReturn(Optional.of(address));
         service.update(1L, request);
+        verify(repository).saveAndFlush(any(Address.class));
+    }
+
+    @Test
+    void deveAtualizarUmNovoRegistroComCoordenadasVazias() {
+        when(repository.findById(anyLong()))
+                .thenReturn(Optional.of(address));
+
+        service.update(1L,request);
+
+        verify(googleMapsService).setCoordinates(any(AddressRequest.class));
+        verify(repository).saveAndFlush(any(Address.class));
+    }
+
+    @Test
+    void deveAtualizarUmNovoRegistroComCoordenadasPreenchidas() {
+        when(repository.findById(anyLong()))
+                .thenReturn(Optional.of(address));
+        request.setLongitude("12");
+        request.setLatitude("312");
+
+        service.update(1L,request);
+        verify(googleMapsService, never()).setCoordinates(any(AddressRequest.class));
         verify(repository).saveAndFlush(any(Address.class));
     }
 

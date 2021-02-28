@@ -48,6 +48,9 @@ public class AddressService {
 
     public AddressResponse update(final Long id, final AddressRequest request) {
         final Address found = repository.findById(id).orElseThrow(NotFoundException::new);
+        if(request.isCoordenadaVazia()){
+            googleMapsService.setCoordinates(request);
+        }
         final Address addressToUpdate = new AddressRequest.BuilderAddressFromRequest(request).withId(id).build();
         BeanUtils.copyProperties(addressToUpdate, found);
         return new AddressResponse(repository.saveAndFlush(found));
